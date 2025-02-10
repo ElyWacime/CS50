@@ -201,27 +201,32 @@ class MinesweeperAI():
             5) add any new sentences to the AI's knowledge base
                if they can be inferred from existing knowledge
         """
+        print(f"current cell >>>>>> ::::: {cell}")
         self.moves_made.add(cell)
         self.mark_safe(cell)
-        # print("ENTER\n\n")
+
         # add sentences based on the value of cell into the knowledge of our AI
         new_cells = set()
         for i in range(cell[0] - 1, cell[0] + 2):
             for j in range(cell[1] - 1, cell[1] + 2):
-                if (i, j) == cell:
+                if (i, j) == cell or (i, j) in self.safes:
+                    continue
+                if ((i, j) in self.mines):
+                    count-=1
                     continue
                 if 0 <= i < self.height and 0 <= j < self.width:
                     new_cells.add((i, j))
         new_sentence = Sentence(new_cells, count)
-        self.knowledge.append(new_sentence)
+        if new_sentence not in self.knowledge:
+            self.knowledge.append(new_sentence)
 
-        # print("0000\n")
         # remove a cell if it exists in an old sentence
         for sentence in self.knowledge:
-            for _cell in sentence.cells:
+            for _cell in sentence.cells.copy():
                 if cell == _cell:
                     sentence.cells.remove(_cell)
-        # print("1111\n")
+
+        self.mark_sels_as_mine_or_safe()
 
         # checking if a set is a subset of another set, and creating a new set
         new_sentences = []
@@ -239,8 +244,13 @@ class MinesweeperAI():
                     new_sentences.append(Sentence(cells=new_cells, count=new_count))
         if new_sentence:
             self.knowledge.extend(new_sentences)
-        # print("after loop\n\n")
 
+        self.mark_sels_as_mine_or_safe()
+        
+        return
+        raise NotImplementedError
+
+    def mark_sels_as_mine_or_safe(self):
         # marking additional cells as mines or safe
         sentences_to_remove = []
         for sentence in self.knowledge.copy():
@@ -255,16 +265,15 @@ class MinesweeperAI():
                 for cell in sentence.cells.copy():
                     self.mark_safe(cell)
                 sentences_to_remove.append(sentence) # remove the senetence since all cells are safe
+        
         for sentence in sentences_to_remove:
             if sentence in self.knowledge:
                 self.knowledge.remove(sentence)
-        # print("2222\n")
-        # for sentence in self.knowledge:
-        #     print(f"[{sentence.cells}] >>>>> {sentence.count}")
 
-        # print("222")
-        return
-        raise NotImplementedError
+        for sentence in self.knowledge:
+            for cell in sentence.cells.copy():
+                if cell in self.mines:
+                    sentence.remove(cell)
 
     def make_safe_move(self):
         """
