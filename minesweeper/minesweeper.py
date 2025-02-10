@@ -107,6 +107,9 @@ class Sentence():
         """
         Returns the set of all cells in self.cells known to be mines.
         """
+        if len(self.cells) == self.count:
+            for cell in self.cells:
+                self.mark_mine(cell=cell)
         return self.known_mine_set
         raise NotImplementedError
 
@@ -208,12 +211,20 @@ class MinesweeperAI():
                     new_cells.add((i, j))
         new_sentence = Sentence(new_cells, count)
         self.knowledge.append(new_sentence)
-        print("000")
+
+        # remove a the cell if it exists in an old sentence
+        for sentence in self.knowledge:
+            for _cell in sentence.cells:
+                if cell == _cell:
+                    sentence.cells.remove(_cell)
+        # print("000")
 
         # checking if a set is a subset of another set, and creating a new set
         new_sentences = []
         for sentence in self.knowledge:
+            # print("first loop")
             for _sentence in self.knowledge:
+                # print("second loop")
                 if sentence == _sentence:
                     continue
                 if sentence.cells.issubset(_sentence.cells):
@@ -225,7 +236,8 @@ class MinesweeperAI():
                     new_count = sentence.count - _sentence.count
                     new_sentences.append(Sentence(cells=new_cells, count=new_count))
         self.knowledge.extend(new_sentences)
-        print("111")
+        # print("111")
+
         # marking additional cells as mines or safe
         for sentence in self.knowledge:
             if len(sentence.cells) == sentence.count and sentence.count != 0:
@@ -234,7 +246,7 @@ class MinesweeperAI():
             if (sentence.count == 0):
                 for cell in sentence.cells.copy():
                     self.mark_safe(cell)
-        print("222")
+        # print("222")
         return
         raise NotImplementedError
 
