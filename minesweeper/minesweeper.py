@@ -108,7 +108,7 @@ class Sentence():
         Returns the set of all cells in self.cells known to be mines.
         """
         if len(self.cells) == self.count:
-            for cell in self.cells:
+            for cell in self.cells.copy():
                 self.mark_mine(cell=cell)
         return self.known_mine_set
         raise NotImplementedError
@@ -117,6 +117,9 @@ class Sentence():
         """
         Returns the set of all cells in self.cells known to be safe.
         """
+        if self.count == 0:
+            for cell in self.cells.copy():
+                self.mark_safe(cell=cell)
         return self.known_safe_set
         raise NotImplementedError
 
@@ -200,7 +203,7 @@ class MinesweeperAI():
         """
         self.moves_made.add(cell)
         self.mark_safe(cell)
-
+        # print("ENTER\n\n")
         # add sentences based on the value of cell into the knowledge of our AI
         new_cells = set()
         for i in range(cell[0] - 1, cell[0] + 2):
@@ -212,20 +215,19 @@ class MinesweeperAI():
         new_sentence = Sentence(new_cells, count)
         self.knowledge.append(new_sentence)
 
-        # remove a the cell if it exists in an old sentence
+        # print("0000\n")
+        # remove a cell if it exists in an old sentence
         for sentence in self.knowledge:
             for _cell in sentence.cells:
                 if cell == _cell:
                     sentence.cells.remove(_cell)
-        # print("000")
+        # print("1111\n")
 
         # checking if a set is a subset of another set, and creating a new set
         new_sentences = []
         for sentence in self.knowledge:
-            # print("first loop")
             for _sentence in self.knowledge:
-                # print("second loop")
-                if sentence == _sentence:
+                if sentence == _sentence or len(sentence.cells) == len(_sentence.cells):
                     continue
                 if sentence.cells.issubset(_sentence.cells):
                     new_cells = _sentence.cells.difference(sentence.cells)
@@ -235,17 +237,31 @@ class MinesweeperAI():
                     new_cells = sentence.cells.difference(_sentence.cells)
                     new_count = sentence.count - _sentence.count
                     new_sentences.append(Sentence(cells=new_cells, count=new_count))
-        self.knowledge.extend(new_sentences)
-        # print("111")
+        if new_sentence:
+            self.knowledge.extend(new_sentences)
+        # print("after loop\n\n")
 
         # marking additional cells as mines or safe
-        for sentence in self.knowledge:
+        sentences_to_remove = []
+        for sentence in self.knowledge.copy():
+            if len(sentence.cells) == 0:
+                sentences_to_remove.append(sentence)
+                continue
             if len(sentence.cells) == sentence.count and sentence.count != 0:
                 for cell in sentence.cells.copy():
                     self.mark_mine(cell)
+                sentences_to_remove.append(sentence) # remove the sentence since all cells are mines
             if (sentence.count == 0):
                 for cell in sentence.cells.copy():
                     self.mark_safe(cell)
+                sentences_to_remove.append(sentence) # remove the senetence since all cells are safe
+        for sentence in sentences_to_remove:
+            if sentence in self.knowledge:
+                self.knowledge.remove(sentence)
+        # print("2222\n")
+        # for sentence in self.knowledge:
+        #     print(f"[{sentence.cells}] >>>>> {sentence.count}")
+
         # print("222")
         return
         raise NotImplementedError
@@ -272,9 +288,12 @@ class MinesweeperAI():
             1) have not already been chosen, and
             2) are not known to be mines
         """
+        random_moves = []
         for i in range(self.height):
             for j in range(self.width):
                 if (i, j) not in self.moves_made and (i, j) not in self.mines:
-                    return (i, j)
+                    random_moves.append((i, j))
+        if (random_moves):
+            return random.choice(random_moves)
         return None
         raise NotImplementedError
