@@ -73,6 +73,14 @@ def transition_model(corpus, page, damping_factor):
     raise NotImplementedError
 
 
+def pr_some_of_all_pages_that_link_back(corpus, page, pr):
+    ret = 0
+
+    for key in corpus:
+        if (page in corpus[key]):
+            ret += pr[key] / len(corpus[key])
+    return ret
+
 def sample_pagerank(corpus, damping_factor, n):
     """
     Return PageRank values for each page by sampling `n` pages
@@ -82,6 +90,20 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
+    len_corpus = len(corpus)
+    
+    # initializing the page rank for each page equal to 1/N
+    pr = {}
+    for page in corpus:
+        pr[page] = 1 / len_corpus
+    
+    # calculate the pr for each page n time 
+    for _ in range(n):
+        for page in corpus:
+            pr[page] = ((1 - damping_factor) / len_corpus) +\
+                (damping_factor * pr_some_of_all_pages_that_link_back(corpus, page, pr.copy()))
+
+    return pr
     raise NotImplementedError
 
 
